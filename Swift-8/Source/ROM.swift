@@ -38,14 +38,13 @@ struct ROM {
 	func dissassemble() {
 		// Opcodes are 2 bytes long in Big Endian, and are organized using the first nibble (4 most signifcant bits) 
 		for i in 0 ... bytes.count / 2 - 1 {
-			let hf: UInt8 = bytes[2 * i]
-			let lf: UInt8 = bytes[2 * i + 1]
-			let hexCode: UInt16 = UInt16(hf) << 8 | UInt16(lf)
+			let opcode: Opcode = Opcode(highByte: bytes[2 * i], lowByte: bytes[2 * i + 1])
 
-			if hf >> 4 == 0x1 {
-				print(String(format: "%04X -> Jump to $%1X%02X", hexCode, hf & 0x0F, lf))
+			// TODO: Use switch with nib1
+			if opcode.byteH >> 4 == 0x1 {
+				print(String(format: "\(opcode) -> Jump to $%1X%02X", opcode.nib2, opcode.byteL))
 			} else {
-				print(String(format: "%04X -> Not implemented yet.", hexCode, lf))
+				print(String(format: "\(opcode) -> Not implemented yet."))
 			}
 		}
 	}

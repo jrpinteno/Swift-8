@@ -10,7 +10,7 @@ import Foundation
 
 // TODO: Error handling
 struct ROM {
-	let bytes: [UInt8]
+	internal let bytes: [UInt8]
 
 	init?(path: String) {
 		guard let file = fopen(path, "rb") else {
@@ -33,5 +33,20 @@ struct ROM {
 		fread(&buffer, MemoryLayout<UInt8>.size, filesize, file)
 
 		bytes = buffer
+	}
+
+	func dissassemble() {
+		// Opcodes are 2 bytes long in Big Endian, and are organized using the first nibble (4 most signifcant bits) 
+		for i in 0 ... bytes.count / 2 - 1 {
+			let hf: UInt8 = bytes[2 * i]
+			let lf: UInt8 = bytes[2 * i + 1]
+			let hexCode: UInt16 = UInt16(hf) << 8 | UInt16(lf)
+
+			if hf >> 4 == 0x1 {
+				print(String(format: "%04X -> Jump to $%1X%02X", hexCode, hf & 0x0F, lf))
+			} else {
+				print(String(format: "%04X -> Not implemented yet.", hexCode, lf))
+			}
+		}
 	}
 }

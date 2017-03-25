@@ -11,3 +11,5 @@ import Foundation
 print("Hello, World!")
 
 let rom = ROM(path: "pong.ch8")
+rom?.dissassemble()
+

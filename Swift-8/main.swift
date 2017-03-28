@@ -12,4 +12,6 @@ print("Hello, World!")
 
 let rom = ROM(path: "pong.ch8")
 rom?.dissassemble()
+var chip8: Machine = Machine()
 
+chip8.loadRom(rom!)

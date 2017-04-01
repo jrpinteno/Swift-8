@@ -13,3 +13,9 @@ rom?.dissassemble()
 var chip8: Machine = Machine()
 
 chip8.loadRom(rom!)
+
+var decoded: Bool
+repeat {
+	decoded = chip8.emulateCycle()
+	print(chip8)
+} while decoded == true

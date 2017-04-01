@@ -148,6 +148,30 @@ struct Machine: CustomStringConvertible {
 					pc += 2
 				}
 
+			case (0xA, _, _, _): // ANNN
+				index = UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL)
+
+			case (0xF, _, 0x1, 0xE): // FX1E
+				index += UInt16(vRegisters[Int(opcode.nib2)])
+
+			case (0xF, _, 0x3, 0x3): // FX33
+				var value: UInt8 = vRegisters[Int(opcode.nib2)]
+				memory[Int(index + 2)] = value % 10
+				value = value / 10
+				memory[Int(index + 1)] = value % 10
+				value = value / 10
+				memory[Int(index)] = value % 10
+
+			case (0xF, _, 0x5, 0x5): // FX55
+				let x: Int = Int(opcode.nib2)
+
+				memory.replaceSubrange(Int(index) ... Int(index) + x, with: vRegisters[0 ... x])
+
+			case (0xF, _, 0x6, 0x5): // FX65
+				let x: Int = Int(opcode.nib2)
+
+				vRegisters.replaceSubrange(0 ... x, with: memory[Int(index) ... Int(index) + x])
+
 			default:
 				print("\(opcode) -> Not decoded yet")
 				isDecoded = false

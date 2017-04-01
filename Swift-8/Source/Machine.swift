@@ -81,6 +81,24 @@ struct Machine: CustomStringConvertible {
 				pc = UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL)
 				isJump = true
 
+			case (0x3, _, _, _): // 3XNN
+				// Instruction skippers just increment pc by 2 twice, skipping the next immediate instruction
+				if vRegisters[Int(opcode.nib2)] == opcode.byteL {
+					pc += 2
+				}
+
+			case (0x4, _, _, _): // 4XNN
+				// Instruction skippers just increment pc by 2 twice, skipping the next immediate instruction
+				if vRegisters[Int(opcode.nib2)] != opcode.byteL {
+					pc += 2
+				}
+
+			case (0x5, _, _, _): // 5XY0
+				// Instruction skippers just increment pc by 2 twice, skipping the next immediate instruction
+				if vRegisters[Int(opcode.nib2)] == vRegisters[Int(opcode.nib3)] {
+					pc += 2
+				}
+
 			case (0x6, _, _, _): // 6XNN
 				vRegisters[Int(opcode.nib2)] = opcode.byteL
 
@@ -122,6 +140,13 @@ struct Machine: CustomStringConvertible {
 			case (0xB, _, _, _): // BNNN
 				pc = UInt16(vRegisters[0x0]) + (UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL))
 				isJump = true
+
+
+			case (0x9, _, _, _): // 9XY0
+				// Instruction skippers just increment pc by 2 twice, skipping the next immediate instruction
+				if vRegisters[Int(opcode.nib2)] != vRegisters[Int(opcode.nib3)] {
+					pc += 2
+				}
 
 			default:
 				print("\(opcode) -> Not decoded yet")

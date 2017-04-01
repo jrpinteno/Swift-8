@@ -69,13 +69,18 @@ struct Machine: CustomStringConvertible {
 	}
 
 	mutating func emulateCycle() -> Bool {
-		var decoded: Bool = true
+		var isDecoded: Bool = true
+		var isJump: Bool = false
 
 		// Fetch opcode
 		let opcode: Opcode = Opcode(highByte: memory[Int(pc)], lowByte: memory[Int(pc + 1)])
 
 		// Decode and execute opcode
 		switch (opcode.nib1, opcode.nib2, opcode.nib3, opcode.nib4) {
+			case (0x1, _, _, _): // 1NNN
+				pc = UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL)
+				isJump = true
+
 			case (0x6, _, _, _): // 6XNN
 				vRegisters[Int(opcode.nib2)] = opcode.byteL
 
@@ -114,14 +119,20 @@ struct Machine: CustomStringConvertible {
 				vRegisters[0xF] = (vRegisters[x] >> 7) & 0x1
 				vRegisters[x] = vRegisters[x] << 1
 
+			case (0xB, _, _, _): // BNNN
+				pc = UInt16(vRegisters[0x0]) + (UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL))
+				isJump = true
+
 			default:
 				print("\(opcode) -> Not decoded yet")
-				decoded = false
+				isDecoded = false
 		}
 
-		// Increase program counter
-		pc += 2
+		// Increase program counter unless there is a jump instruction
+		if !isJump {
+			pc += 2
+		}
 
-		return decoded
+		return isDecoded
 	}
 }

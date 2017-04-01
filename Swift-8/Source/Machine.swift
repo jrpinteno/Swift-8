@@ -77,8 +77,20 @@ struct Machine: CustomStringConvertible {
 
 		// Decode and execute opcode
 		switch (opcode.nib1, opcode.nib2, opcode.nib3, opcode.nib4) {
+			case (0x0, 0x0, 0xE, 0xE): // 00EE
+				pc = stack[Int(sp)]
+				sp -= 1
+				isJump = true
+
 			case (0x1, _, _, _): // 1NNN
 				pc = UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL)
+				isJump = true
+
+			case (0x2, _, _, _): // 2NNN
+				stack[Int(sp)] = pc
+				sp += 1
+				pc = UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL)
+				// TODO: Not a jump per se, var should be changed
 				isJump = true
 
 			case (0x3, _, _, _): // 3XNN

@@ -176,6 +176,21 @@ struct Machine: CustomStringConvertible {
 				let x: Int = Int(opcode.nib2)
 				vRegisters[x] += opcode.byteL
 
+			case (0x8, _, _, 0x0): // 8XY0
+				vRegisters[Int(opcode.nib2)] = vRegisters[Int(opcode.nib3)]
+
+			case (0x8, _, _, 0x1): // 8XY1
+				vRegisters[Int(opcode.nib2)] |= vRegisters[Int(opcode.nib3)]
+				vRegisters[0xF] = 0x0;
+
+			case (0x8, _, _, 0x2): // 8XY2
+				vRegisters[Int(opcode.nib2)] &= vRegisters[Int(opcode.nib3)]
+				vRegisters[0xF] = 0x0;
+
+			case (0x8, _, _, 0x3): // 8XY3
+				vRegisters[Int(opcode.nib2)] ^= vRegisters[Int(opcode.nib3)]
+				vRegisters[0xF] = 0x0;
+
 			case (0x8, _, _, 0x4): // 8XY4
 				let x: Int = Int(opcode.nib2)
 				let y: Int = Int(opcode.nib3)
@@ -207,11 +222,6 @@ struct Machine: CustomStringConvertible {
 				vRegisters[0xF] = (vRegisters[x] >> 7) & 0x1
 				vRegisters[x] = vRegisters[x] << 1
 
-			case (0xB, _, _, _): // BNNN
-				pc = UInt16(vRegisters[0x0]) + (UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL))
-				isJump = true
-
-
 			case (0x9, _, _, _): // 9XY0
 				// Instruction skippers just increment pc by 2 twice, skipping the next immediate instruction
 				if vRegisters[Int(opcode.nib2)] != vRegisters[Int(opcode.nib3)] {
@@ -220,6 +230,14 @@ struct Machine: CustomStringConvertible {
 
 			case (0xA, _, _, _): // ANNN
 				index = UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL)
+
+			case (0xB, _, _, _): // BNNN
+				pc = UInt16(vRegisters[0x0]) + (UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL))
+				isJump = true
+
+			case (0xC, _, _, _): // CXNN
+				let random: UInt8 = UInt8(arc4random_uniform(UInt32(UInt8.max)))
+				vRegisters[Int(opcode.nib2)] = random & opcode.byteL
 
 			case (0xD, _, _, _): // DXYN
 				drawSprite(x: Int(vRegisters[Int(opcode.nib2)]), y: Int(vRegisters[Int(opcode.nib3)]), height: Int(opcode.nib4))

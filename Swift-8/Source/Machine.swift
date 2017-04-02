@@ -221,8 +221,15 @@ struct Machine: CustomStringConvertible {
 			case (0xA, _, _, _): // ANNN
 				index = UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL)
 
+			case (0xD, _, _, _): // DXYN
+				drawSprite(x: Int(vRegisters[Int(opcode.nib2)]), y: Int(vRegisters[Int(opcode.nib3)]), height: Int(opcode.nib4))
+
 			case (0xF, _, 0x1, 0xE): // FX1E
 				index += UInt16(vRegisters[Int(opcode.nib2)])
+
+			case (0xF, _, 0x2, 0x9): // FX29
+				// Each font sprite uses 5 bytes and they are stored beginning of memory
+				index = UInt16(vRegisters[Int(opcode.nib2)] * 5)
 
 			case (0xF, _, 0x3, 0x3): // FX33
 				var value: UInt8 = vRegisters[Int(opcode.nib2)]
@@ -257,11 +264,15 @@ struct Machine: CustomStringConvertible {
 
 	private mutating func updateState (opcode: Opcode) {
 		var newState: [String] = []
-		newState.append(String(pc))
+		newState.append(String(format: "0x%04X", pc))
 		newState.append(String(sp))
 		newState.append(String(describing: opcode))
 		newState.append(contentsOf: vRegisters[0 ..< vRegisters.count].map { String($0) })
 
 		chipStateTable.append(newState)
+	}
+
+	private func drawSprite(x: Int, y: Int, height: Int) {
+		// TODO: Implement later
 	}
 }

@@ -36,6 +36,7 @@ struct ROM {
 	}
 
 	func dissassemble() {
+		print("Dissassemble")
 		// Opcodes are 2 bytes long in Big Endian, and are organized using the first nibble (4 most signifcant bits) 
 		for i in 0 ... bytes.count / 2 - 1 {
 			let opcode: Opcode = Opcode(highByte: bytes[2 * i], lowByte: bytes[2 * i + 1])

@@ -10,6 +10,7 @@
 		D12948BD1E880B9A00569631 /* Machine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12948BC1E880B9A00569631 /* Machine.swift */; };
 		D1AFDD8F1E85CFA3002A9A23 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AFDD8E1E85CFA3002A9A23 /* main.swift */; };
 		D1AFDD961E85CFC9002A9A23 /* ROM.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AFDD951E85CFC9002A9A23 /* ROM.swift */; };
+		D1C6AA801E919D6300B643BC /* Screen.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C6AA7F1E919D6300B643BC /* Screen.swift */; };
 		D1CA7B0F1E8714CD005D4B42 /* Opcode.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CA7B0E1E8714CD005D4B42 /* Opcode.swift */; };
 /* End PBXBuildFile section */
 
@@ -31,6 +32,7 @@
 		D1AFDD8B1E85CFA3002A9A23 /* Swift-8 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "Swift-8"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1AFDD8E1E85CFA3002A9A23 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		D1AFDD951E85CFC9002A9A23 /* ROM.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ROM.swift; sourceTree = "<group>"; };
+		D1C6AA7F1E919D6300B643BC /* Screen.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Screen.swift; sourceTree = "<group>"; };
 		D1CA7B0E1E8714CD005D4B42 /* Opcode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Opcode.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -51,6 +53,7 @@
 				D1AFDD951E85CFC9002A9A23 /* ROM.swift */,
 				D1CA7B0E1E8714CD005D4B42 /* Opcode.swift */,
 				D12948BC1E880B9A00569631 /* Machine.swift */,
+				D1C6AA7F1E919D6300B643BC /* Screen.swift */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -148,6 +151,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D1C6AA801E919D6300B643BC /* Screen.swift in Sources */,
 				D1CA7B0F1E8714CD005D4B42 /* Opcode.swift in Sources */,
 				D12948BD1E880B9A00569631 /* Machine.swift in Sources */,
 				D1AFDD961E85CFC9002A9A23 /* ROM.swift in Sources */,

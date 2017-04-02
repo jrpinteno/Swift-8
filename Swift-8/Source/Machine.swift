@@ -33,7 +33,7 @@ struct Machine: CustomStringConvertible {
 	private let screenWidth: Int = 64
 	private let screenHeight: Int = 32
 
-	var screen: [[UInt8]]
+	var screen: Screen
 
 	var chipStateHeader: [String] {
 		return ["PC", "SP", "Opcode", "V0", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "VA", "VB", "VC", "VD", "VE", "VF"]
@@ -119,7 +119,8 @@ struct Machine: CustomStringConvertible {
 		memory.replaceSubrange(0 ... fontSet.count - 1, with: fontSet)
 		vRegisters = Array(repeating: 0, count: 16)
 		stack = Array(repeating: 0, count: 16)
-		screen = Array(repeating: Array(repeating: 0, count: screenHeight), count: screenWidth)
+
+		screen = Screen(width: screenWidth, height: screenHeight)
 
 		index = 0
 		pc = 0x200 // Program begins at this address
@@ -303,36 +304,12 @@ struct Machine: CustomStringConvertible {
 		var sprite: [UInt8] = Array(repeating: 0, count: height)
 		sprite.replaceSubrange(0 ..< height, with: memory[Int(index) ..< Int(index) + height])
 
-		for j in 0 ..< height {
-			let spriteRow: UInt8 = sprite[j]
+		let didErasePixel: Bool = screen.draw(sprite, x: x, y: y)
 
-			for i in 0 ..< 8 {
-				let actualX = (x + i) % screenWidth
-				let actualY = (y + j) % screenHeight
-				let currentPixel: UInt8 = screen[actualX][actualY]
-				let spritePixel: UInt8 = (spriteRow >> UInt8(7 - i)) & 0x1 == 0x1 ? 0xFF : 0
-
-				screen[actualX][actualY] ^= spritePixel
-
-				if currentPixel != 0 && screen[actualX][actualY] == 0 {
-					vRegisters[0xF] = 0x1
-				}
-			}
+		if didErasePixel {
+			vRegisters[0xF] = 0x1
 		}
 
-		printScreen()
-	}
-
-	private func printScreen() {
-		print("Next screen")
-		for j in 0 ..< screenHeight {
-			var row: String = ""
-
-			for i in 0 ..< screenWidth {
-				row.append(screen[i][j] == 0 ? "0" : "1")
-			}
-
-			print(row)
-		}
+		screen.printScreen()
 	}
 }

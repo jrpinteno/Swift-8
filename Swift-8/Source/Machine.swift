@@ -106,7 +106,7 @@ struct Machine: CustomStringConvertible {
 	]
 
 	var description: String {
-		return String(format: "SP: \(sp) PC: \(pc), registers: \(vRegisters)")
+		return String(format: "SP: \(sp) PC: 0x%04X, registers: \(vRegisters)", pc)
 	}
 
 	init() {
@@ -136,8 +136,8 @@ struct Machine: CustomStringConvertible {
 		// Decode and execute opcode
 		switch (opcode.nib1, opcode.nib2, opcode.nib3, opcode.nib4) {
 			case (0x0, 0x0, 0xE, 0xE): // 00EE
-				pc = stack[Int(sp)]
 				sp -= 1
+				pc = stack[Int(sp)]
 				isJump = true
 
 			case (0x1, _, _, _): // 1NNN

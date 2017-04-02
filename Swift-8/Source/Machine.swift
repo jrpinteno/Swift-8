@@ -30,6 +30,11 @@ struct Machine: CustomStringConvertible {
 
 	var stack: [UInt16]
 
+	private let screenWidth: Int = 64
+	private let screenHeight: Int = 32
+
+	var screen: [[UInt8]]
+
 	var chipStateHeader: [String] {
 		return ["PC", "SP", "Opcode", "V0", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "VA", "VB", "VC", "VD", "VE", "VF"]
 	}
@@ -112,9 +117,10 @@ struct Machine: CustomStringConvertible {
 	init() {
 		memory = Array(repeating: 0, count: 4096)
 		memory.replaceSubrange(0 ... fontSet.count - 1, with: fontSet)
-
 		vRegisters = Array(repeating: 0, count: 16)
 		stack = Array(repeating: 0, count: 16)
+		screen = Array(repeating: Array(repeating: 0, count: screenHeight), count: screenWidth)
+
 		index = 0
 		pc = 0x200 // Program begins at this address
 		sp = 0
@@ -130,7 +136,7 @@ struct Machine: CustomStringConvertible {
 
 		// Fetch opcode
 		let opcode: Opcode = Opcode(highByte: memory[Int(pc)], lowByte: memory[Int(pc + 1)])
-
+		print(opcode)
 		updateState(opcode: opcode)
 
 		// Decode and execute opcode
@@ -277,6 +283,7 @@ struct Machine: CustomStringConvertible {
 			pc += 2
 		}
 
+		sleep(1)
 		return isDecoded
 	}
 
@@ -290,7 +297,42 @@ struct Machine: CustomStringConvertible {
 		chipStateTable.append(newState)
 	}
 
-	private func drawSprite(x: Int, y: Int, height: Int) {
-		// TODO: Implement later
+	private mutating func drawSprite(x: Int, y: Int, height: Int) {
+		vRegisters[0xF] = 0x0
+
+		var sprite: [UInt8] = Array(repeating: 0, count: height)
+		sprite.replaceSubrange(0 ..< height, with: memory[Int(index) ..< Int(index) + height])
+
+		for j in 0 ..< height {
+			let spriteRow: UInt8 = sprite[j]
+
+			for i in 0 ..< 8 {
+				let actualX = (x + i) % screenWidth
+				let actualY = (y + j) % screenHeight
+				let currentPixel: UInt8 = screen[actualX][actualY]
+				let spritePixel: UInt8 = (spriteRow >> UInt8(7 - i)) & 0x1 == 0x1 ? 0xFF : 0
+
+				screen[actualX][actualY] ^= spritePixel
+
+				if currentPixel != 0 && screen[actualX][actualY] == 0 {
+					vRegisters[0xF] = 0x1
+				}
+			}
+		}
+
+		printScreen()
+	}
+
+	private func printScreen() {
+		print("Next screen")
+		for j in 0 ..< screenHeight {
+			var row: String = ""
+
+			for i in 0 ..< screenWidth {
+				row.append(screen[i][j] == 0 ? "0" : "1")
+			}
+
+			print(row)
+		}
 	}
 }

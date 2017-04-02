@@ -180,7 +180,7 @@ struct Machine: CustomStringConvertible {
 
 			case (0x7, _, _, _): // 7XNN
 				let x: Int = Int(opcode.nib2)
-				vRegisters[x] += opcode.byteL
+				vRegisters[x] = vRegisters[x] &+ opcode.byteL
 
 			case (0x8, _, _, 0x0): // 8XY0
 				vRegisters[Int(opcode.nib2)] = vRegisters[Int(opcode.nib3)]
@@ -202,14 +202,14 @@ struct Machine: CustomStringConvertible {
 				let y: Int = Int(opcode.nib3)
 
 				vRegisters[0xF] = (vRegisters[x] + vRegisters[y] > UInt8.max) ? 0x1 : 0x0
-				vRegisters[x] += vRegisters[y]
+				vRegisters[x] = vRegisters[x] &+ vRegisters[y]
 
 			case (0x8, _, _, 0x5): // 8XY5
 				let x: Int = Int(opcode.nib2)
 				let y: Int = Int(opcode.nib3)
 
 				vRegisters[0xF] = (vRegisters[x] - vRegisters[y] < 0) ? 0x0 : 0x1
-				vRegisters[x] -= vRegisters[y]
+				vRegisters[x] = vRegisters[x] &- vRegisters[y]
 
 			case (0x8, _, _, 0x6): // 8XY6
 				let x: Int = Int(opcode.nib2)

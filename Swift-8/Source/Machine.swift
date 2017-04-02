@@ -30,8 +30,60 @@ struct Machine: CustomStringConvertible {
 
 	var stack: [UInt16]
 
-	var description: String {
-		return String(format: "pc: \(pc), registers: \(vRegisters)")
+	var chipStateHeader: [String] {
+		return ["PC", "SP", "Opcode", "V0", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "VA", "VB", "VC", "VD", "VE", "VF"]
+	}
+
+	func computeWidths() -> [Int] {
+		var columnWidths: [Int] = []
+
+		for i in 0 ..< chipStateHeader.count {
+			let columnLabel = chipStateHeader[i]
+			columnWidths.append(columnLabel.characters.count)
+		}
+
+		for i in 0 ..< chipStateTable.count {
+			for j in 0 ..< chipStateTable[i].count {
+				let item = chipStateTable[i][j]
+				if columnWidths[j] < item.characters.count {
+					columnWidths[j] = item.characters.count
+				}
+			}
+		}
+
+		return columnWidths
+	}
+
+	var chipStateTable: [[String]] = [[]]
+
+	func printChipState() {
+		var firstRow: String = "|"
+		var columnWidths: [Int] = computeWidths()
+
+		for i in 0 ..< columnWidths.count {
+			let columnLabel = chipStateHeader[i]
+			let paddingNeeded: Int = columnWidths[i] - columnLabel.characters.count
+			let padding: String = repeatElement(" ", count: paddingNeeded).joined(separator: "")
+			let columnHeader: String = " \(padding)\(columnLabel) |"
+			firstRow += columnHeader
+		}
+
+		print(firstRow)
+
+		for i in 0 ..< chipStateTable.count {
+			// Start the output string
+			var out = "|"
+
+			// Append each item in this row to the string
+			for j in 0 ..< chipStateTable[i].count {
+				let item = chipStateTable[i][j]
+				let paddingNeeded: Int = abs(columnWidths[j] - item.characters.count)
+				let padding: String = repeatElement(" ", count: paddingNeeded).joined(separator: "")
+				out += " \(padding)\(item) |"
+			}
+
+			print(out)
+		}
 	}
 
 	let fontSet: [UInt8] = [
@@ -52,6 +104,10 @@ struct Machine: CustomStringConvertible {
 		0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
 		0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 	]
+
+	var description: String {
+		return String(format: "SP: \(sp) PC: \(pc), registers: \(vRegisters)")
+	}
 
 	init() {
 		memory = Array(repeating: 0, count: 4096)
@@ -74,6 +130,8 @@ struct Machine: CustomStringConvertible {
 
 		// Fetch opcode
 		let opcode: Opcode = Opcode(highByte: memory[Int(pc)], lowByte: memory[Int(pc + 1)])
+
+		updateState(opcode: opcode)
 
 		// Decode and execute opcode
 		switch (opcode.nib1, opcode.nib2, opcode.nib3, opcode.nib4) {
@@ -195,5 +253,15 @@ struct Machine: CustomStringConvertible {
 		}
 
 		return isDecoded
+	}
+
+	private mutating func updateState (opcode: Opcode) {
+		var newState: [String] = []
+		newState.append(String(pc))
+		newState.append(String(sp))
+		newState.append(String(describing: opcode))
+		newState.append(contentsOf: vRegisters[0 ..< vRegisters.count].map { String($0) })
+
+		chipStateTable.append(newState)
 	}
 }

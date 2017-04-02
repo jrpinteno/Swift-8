@@ -16,6 +16,8 @@ chip8.loadRom(rom!)
 
 var decoded: Bool
 repeat {
-	decoded = chip8.emulateCycle()
 	print(chip8)
+	decoded = chip8.emulateCycle()
 } while decoded == true
+
+chip8.printChipState()

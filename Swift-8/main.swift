@@ -12,7 +12,7 @@ import Cocoa
 var window: NSWindow?
 
 let rom = ROM(path: "PONG")
-rom?.dissassemble()
+rom?.disassemble()
 var chip8: Machine = Machine()
 
 chip8.loadRom(rom!)

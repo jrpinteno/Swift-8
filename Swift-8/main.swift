@@ -7,8 +7,11 @@
 //
 
 import Foundation
+import Cocoa
 
-let rom = ROM(path: "pong.ch8")
+var window: NSWindow?
+
+let rom = ROM(path: "PONG")
 rom?.dissassemble()
 var chip8: Machine = Machine()
 

@@ -30,10 +30,15 @@ struct Machine: CustomStringConvertible {
 
 	var stack: [UInt16]
 
+	var soundTimer: UInt8
+	var delayTimer: UInt8
+
 	private let screenWidth: Int = 64
 	private let screenHeight: Int = 32
 
 	var screen: Screen
+	var lastOpcode: Opcode?
+	var keypad: [Bool]
 
 	var chipStateHeader: [String] {
 		return ["PC", "SP", "Opcode", "V0", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "VA", "VB", "VC", "VD", "VE", "VF"]
@@ -111,7 +116,7 @@ struct Machine: CustomStringConvertible {
 	]
 
 	var description: String {
-		return String(format: "SP: \(sp) PC: 0x%04X, registers: \(vRegisters)", pc)
+		return String(format: "Opcode: \(String(describing: lastOpcode)) SP: \(sp) PC: 0x%04X, registers: \(vRegisters)", pc)
 	}
 
 	init() {
@@ -121,10 +126,13 @@ struct Machine: CustomStringConvertible {
 		stack = Array(repeating: 0, count: 16)
 
 		screen = Screen(width: screenWidth, height: screenHeight)
+		keypad = Array(repeating: false, count: 0xF)
 
 		index = 0
 		pc = 0x200 // Program begins at this address
 		sp = 0
+		delayTimer = 0
+		soundTimer = 0
 	}
 
 	mutating func loadRom(_ rom: ROM) {
@@ -137,8 +145,9 @@ struct Machine: CustomStringConvertible {
 
 		// Fetch opcode
 		let opcode: Opcode = Opcode(highByte: memory[Int(pc)], lowByte: memory[Int(pc + 1)])
-		print(opcode)
+		lastOpcode = opcode
 		updateState(opcode: opcode)
+		print(self)
 
 		// Decode and execute opcode
 		switch (opcode.nib1, opcode.nib2, opcode.nib3, opcode.nib4) {
@@ -252,6 +261,28 @@ struct Machine: CustomStringConvertible {
 			case (0xD, _, _, _): // DXYN
 				drawSprite(x: Int(vRegisters[Int(opcode.nib2)]), y: Int(vRegisters[Int(opcode.nib3)]), height: Int(opcode.nib4))
 
+			case (0xE, _, 0x9, 0xE): // EX9E
+				if keypad[Int(vRegisters[Int(opcode.nib2)])] {
+					pc += 2
+				}
+
+			case (0xE, _, 0xA, 0x1): // EXA1
+				if !keypad[Int(vRegisters[Int(opcode.nib2)])] {
+					pc += 2
+				}
+
+			case (0xF, _, 0x0, 0xA):
+				print("Waiting for keypress")
+
+			case (0xF, _, 0x0, 0x7):
+				vRegisters[Int(opcode.nib2)] = delayTimer
+
+			case (0xF, _, 0x1, 0x5):
+				delayTimer = vRegisters[Int(opcode.nib2)]
+
+			case (0xF, _, 0x1, 0x8):
+				soundTimer = vRegisters[Int(opcode.nib2)]
+
 			case (0xF, _, 0x1, 0xE): // FX1E
 				index += UInt16(vRegisters[Int(opcode.nib2)])
 
@@ -260,12 +291,17 @@ struct Machine: CustomStringConvertible {
 				index = UInt16(vRegisters[Int(opcode.nib2)] * 5)
 
 			case (0xF, _, 0x3, 0x3): // FX33
+				print(String(format:"Register V_%1X: \(vRegisters[Int(opcode.nib2)])", opcode.nib2))
 				var value: UInt8 = vRegisters[Int(opcode.nib2)]
+				print(value)
 				memory[Int(index + 2)] = value % 10
+				print(value % 10)
 				value = value / 10
 				memory[Int(index + 1)] = value % 10
+				print(value % 10)
 				value = value / 10
 				memory[Int(index)] = value % 10
+				print(value % 10)
 
 			case (0xF, _, 0x5, 0x5): // FX55
 				let x: Int = Int(opcode.nib2)
@@ -287,7 +323,6 @@ struct Machine: CustomStringConvertible {
 			pc += 2
 		}
 
-		sleep(1)
 		return isDecoded
 	}
 

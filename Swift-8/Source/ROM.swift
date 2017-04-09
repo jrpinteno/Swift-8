@@ -169,7 +169,7 @@ struct ROM {
 				}
 
 				default:
-						print(String(format: "\(opcode) -> Not decoded yet."))
+					print(String(format: "\(opcode) -> Not decoded yet."))
 			}
 		}
 	}

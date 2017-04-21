@@ -126,7 +126,7 @@ class Machine: CustomStringConvertible {
 		stack = Array(repeating: 0, count: 16)
 
 		screen = Screen(width: screenWidth, height: screenHeight)
-		keypad = Array(repeating: false, count: 0xF)
+		keypad = Array(repeating: false, count: 16)
 
 		index = 0
 		pc = 0x200 // Program begins at this address

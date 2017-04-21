@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct Machine: CustomStringConvertible {
+class Machine: CustomStringConvertible {
 	/**
 	 * Chip 8 has a 4k memory usually distributed as follows
 	 * [0x000 - 0x1FF] Font data
@@ -133,15 +133,17 @@ struct Machine: CustomStringConvertible {
 		sp = 0
 		delayTimer = 0
 		soundTimer = 0
+
+		listenKeys()
 	}
 
-	mutating func loadRom(_ rom: ROM) {
+	func loadRom(_ rom: ROM) {
 		memory.replaceSubrange(Int(pc) ... (Int(pc) + rom.bytes.count - 1), with: rom.bytes)
 	}
 
-	mutating func emulateCycle() -> Bool {
+	func emulateCycle() -> Bool {
 		var isDecoded: Bool = true
-		var isJump: Bool = false
+		var updatePC: Bool = true
 
 		// Fetch opcode
 		let opcode: Opcode = Opcode(highByte: memory[Int(pc)], lowByte: memory[Int(pc + 1)])
@@ -157,18 +159,16 @@ struct Machine: CustomStringConvertible {
 			case (0x0, 0x0, 0xE, 0xE): // 00EE
 				sp -= 1
 				pc = stack[Int(sp)]
-				isJump = true
 
 			case (0x1, _, _, _): // 1NNN
 				pc = UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL)
-				isJump = true
+				updatePC = false
 
 			case (0x2, _, _, _): // 2NNN
 				stack[Int(sp)] = pc
 				sp += 1
 				pc = UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL)
-				// TODO: Not a jump per se, var should be changed
-				isJump = true
+				updatePC = false
 
 			case (0x3, _, _, _): // 3XNN
 				// Instruction skippers just increment pc by 2 twice, skipping the next immediate instruction
@@ -234,7 +234,7 @@ struct Machine: CustomStringConvertible {
 				let y: Int = Int(opcode.nib3)
 
 				vRegisters[0xF] = (vRegisters[y] - vRegisters[x] < 0) ? 0x0 : 0x1
-				vRegisters[x] = vRegisters[y] - vRegisters[x]
+				vRegisters[x] = vRegisters[y] &- vRegisters[x]
 
 			case (0x8, _, _, 0xE): // 8XYE
 				let x: Int = Int(opcode.nib2)
@@ -252,7 +252,7 @@ struct Machine: CustomStringConvertible {
 
 			case (0xB, _, _, _): // BNNN
 				pc = UInt16(vRegisters[0x0]) + (UInt16(opcode.nib2) << 8 | UInt16(opcode.byteL))
-				isJump = true
+				updatePC = false
 
 			case (0xC, _, _, _): // CXNN
 				let random: UInt8 = UInt8(arc4random_uniform(UInt32(UInt8.max)))
@@ -319,14 +319,14 @@ struct Machine: CustomStringConvertible {
 		}
 
 		// Increase program counter unless there is a jump instruction
-		if !isJump {
+		if updatePC {
 			pc += 2
 		}
 
 		return isDecoded
 	}
 
-	private mutating func updateState (opcode: Opcode) {
+	private func updateState (opcode: Opcode) {
 		var newState: [String] = []
 		newState.append(String(format: "0x%04X", pc))
 		newState.append(String(sp))
@@ -336,7 +336,7 @@ struct Machine: CustomStringConvertible {
 		chipStateTable.append(newState)
 	}
 
-	private mutating func drawSprite(x: Int, y: Int, height: Int) {
+	private func drawSprite(x: Int, y: Int, height: Int) {
 		vRegisters[0xF] = 0x0
 
 		var sprite: [UInt8] = Array(repeating: 0, count: height)
@@ -349,5 +349,38 @@ struct Machine: CustomStringConvertible {
 		}
 
 		screen.printScreen()
+	}
+
+	func setKey(key: Int) {
+		keypad[key] = !keypad[key]
+	}
+
+	func listenKeys() {
+		DispatchQueue.global(qos: .background).async { [unowned self] in
+			let test: Int = self.GetKeyPress()
+			if let key = keymap(value: test) {
+				self.setKey(key: key)
+			}
+
+			self.listenKeys()
+		}
+	}
+
+	// This comes from StackOverflow, keyPress without entering
+	// http://stackoverflow.com/questions/25551321/xcode-swift-command-line-tool-reads-1-char-from-keyboard-without-echo-or-need-to
+	// Only for debug purposes
+	func GetKeyPress () -> Int {
+		var key: Int = 0
+		let c: cc_t = 0
+		let cct = (c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c) // Set of 20 Special Characters
+		var oldt: termios = termios(c_iflag: 0, c_oflag: 0, c_cflag: 0, c_lflag: 0, c_cc: cct, c_ispeed: 0, c_ospeed: 0)
+
+		tcgetattr(STDIN_FILENO, &oldt) // 1473
+		var newt = oldt
+		newt.c_lflag = 1217  // Reset ICANON and Echo off
+		tcsetattr( STDIN_FILENO, TCSANOW, &newt)
+		key = Int(getchar())  // works like "getch()"
+		tcsetattr( STDIN_FILENO, TCSANOW, &oldt)
+		return key
 	}
 }

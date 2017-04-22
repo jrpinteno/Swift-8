@@ -40,6 +40,8 @@ class Machine: CustomStringConvertible {
 	var lastOpcode: Opcode?
 	var keypad: [Bool]
 
+	var lastTimerTick: Date = Date.distantPast
+
 	var chipStateHeader: [String] {
 		return ["PC", "SP", "Opcode", "V0", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "VA", "VB", "VC", "VD", "VE", "VF"]
 	}
@@ -141,8 +143,7 @@ class Machine: CustomStringConvertible {
 		memory.replaceSubrange(Int(pc) ... (Int(pc) + rom.bytes.count - 1), with: rom.bytes)
 	}
 
-	func emulateCycle() -> Bool {
-		var isDecoded: Bool = true
+	func emulateCycle() {
 		var updatePC: Bool = true
 
 		// Fetch opcode
@@ -214,15 +215,17 @@ class Machine: CustomStringConvertible {
 				let x: Int = Int(opcode.nib2)
 				let y: Int = Int(opcode.nib3)
 
-				vRegisters[0xF] = (vRegisters[x] + vRegisters[y] > UInt8.max) ? 0x1 : 0x0
-				vRegisters[x] = vRegisters[x] &+ vRegisters[y]
+				var carry: Bool
+				(vRegisters[x], carry) = UInt8.addWithOverflow(vRegisters[x], vRegisters[y])
+				vRegisters[0xF] = carry ? 0x1 : 0x0
 
 			case (0x8, _, _, 0x5): // 8XY5
 				let x: Int = Int(opcode.nib2)
 				let y: Int = Int(opcode.nib3)
 
-				vRegisters[0xF] = (vRegisters[x] - vRegisters[y] < 0) ? 0x0 : 0x1
-				vRegisters[x] = vRegisters[x] &- vRegisters[y]
+				var borrow: Bool
+				(vRegisters[x], borrow) = UInt8.subtractWithOverflow(vRegisters[x], vRegisters[y])
+				vRegisters[0xF] = borrow ? 0x0 : 0x1
 
 			case (0x8, _, _, 0x6): // 8XY6
 				let x: Int = Int(opcode.nib2)
@@ -233,8 +236,9 @@ class Machine: CustomStringConvertible {
 				let x: Int = Int(opcode.nib2)
 				let y: Int = Int(opcode.nib3)
 
-				vRegisters[0xF] = (vRegisters[y] - vRegisters[x] < 0) ? 0x0 : 0x1
-				vRegisters[x] = vRegisters[y] &- vRegisters[x]
+				var borrow: Bool
+				(vRegisters[x], borrow) = UInt8.subtractWithOverflow(vRegisters[y], vRegisters[x])
+				vRegisters[0xF] = borrow ? 0x0 : 0x1
 
 			case (0x8, _, _, 0xE): // 8XYE
 				let x: Int = Int(opcode.nib2)
@@ -315,7 +319,6 @@ class Machine: CustomStringConvertible {
 
 			default:
 				print("\(opcode) -> Not decoded yet")
-				isDecoded = false
 		}
 
 		// Increase program counter unless there is a jump instruction
@@ -323,7 +326,18 @@ class Machine: CustomStringConvertible {
 			pc += 2
 		}
 
-		return isDecoded
+		let now = Date()
+		if now.timeIntervalSince(lastTimerTick) > 1.0/60.0 {
+			if delayTimer > 0 {
+				delayTimer -= 1
+			}
+
+			if soundTimer > 0 {
+				soundTimer -= 1
+			}
+
+			lastTimerTick = now
+		}
 	}
 
 	private func updateState (opcode: Opcode) {

@@ -9,7 +9,8 @@
 import Foundation
 import Cocoa
 
-var window: NSWindow?
+let cpuQueue: DispatchQueue = DispatchQueue(label: "chip8")
+let cpuTimer: DispatchSourceTimer = DispatchSource.makeTimerSource()
 
 let rom = ROM(path: "PONG")
 rom?.disassemble()
@@ -17,9 +18,13 @@ var chip8: Machine = Machine()
 
 chip8.loadRom(rom!)
 
-var decoded: Bool
-repeat {
-	decoded = chip8.emulateCycle()
-} while decoded == true
+// 1000Hz timer
+cpuTimer.scheduleRepeating(deadline: .now(), interval: .milliseconds(1))
+cpuTimer.setEventHandler {
+	chip8.emulateCycle()
+}
 
-chip8.printChipState()
+cpuTimer.resume()
+
+// Temporarily for when using console so that it doesn't go away
+dispatchMain()
